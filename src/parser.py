@@ -271,7 +271,7 @@ def p_return_stmt(p):
 # ===========================================================================
 
 def p_print_stmt_star(p):
-    """print_stmt : PRINT STAR COMMA print_item_list"""
+    """print_stmt : PRINT TIMES COMMA print_item_list"""
     p[0] = ('print', '*', p[4])
 
 def p_print_stmt_fmt(p):
@@ -303,7 +303,7 @@ def p_write_stmt_nolist(p):
     p[0] = ('write', p[3], [])
 
 def p_write_ctrl_star_star(p):
-    """write_ctrl : STAR COMMA STAR"""
+    """write_ctrl : TIMES COMMA TIMES"""
     p[0] = ('*', '*')
 
 def p_write_ctrl_unit_fmt(p):
@@ -311,7 +311,7 @@ def p_write_ctrl_unit_fmt(p):
     p[0] = (p[1], p[3])
 
 def p_write_ctrl_unit_star(p):
-    """write_ctrl : expr COMMA STAR"""
+    """write_ctrl : expr COMMA TIMES"""
     p[0] = (p[1], '*')
 
 # ===========================================================================
@@ -319,7 +319,7 @@ def p_write_ctrl_unit_star(p):
 # ===========================================================================
 
 def p_read_stmt_star(p):
-    """read_stmt : READ STAR COMMA expr_list"""
+    """read_stmt : READ TIMES COMMA expr_list"""
     p[0] = ('read', '*', p[4])
 
 def p_read_stmt_fmt(p):

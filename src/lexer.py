@@ -83,7 +83,6 @@ tokens = list(reserved.values()) + [
     'COMMA',      # ,
     'COLON',      # :
     'SEMICOLON',  # ;
-    'STAR',       # * (usado em PRINT *, ...)
     'CONCAT',     # // (concatenação de strings)
 
     # Label (número no início de linha para DO/CONTINUE/GOTO)
