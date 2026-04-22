@@ -82,11 +82,7 @@ tokens = list(reserved.values()) + [
     'RPAREN',     # )
     'COMMA',      # ,
     'COLON',      # :
-    'SEMICOLON',  # ;
     'CONCAT',     # // (concatenação de strings)
-
-    # Label (número no início de linha para DO/CONTINUE/GOTO)
-    'LABEL',
 ]
 
 # ---------------------------------------------------------------------------
@@ -100,7 +96,6 @@ t_LPAREN    = r'\('
 t_RPAREN    = r'\)'
 t_COMMA     = r','
 t_COLON     = r':'
-t_SEMICOLON = r';'
 t_CONCAT    = r'//'
 
 # Ignorar espaços e tabulações (mas NÃO newlines — tratados à parte)
@@ -208,17 +203,17 @@ def t_STRING(t):
     t.value = t.value[1:-1]  # remove as plicas
     return t
 
+# Comentários Fortran 77: linha que começa com C ou ! (free-form)
+def t_COMMENT(t):
+    r'(^|\n)[Cc].*|!.*'
+    pass  # ignorar comentários
+
 # Identificadores e palavras-chave (case-insensitive)
 def t_ID(t):
     r'[A-Za-z][A-Za-z0-9_]*'
     t.value = t.value.upper()
     t.type = reserved.get(t.value, 'ID')
     return t
-
-# Comentários Fortran 77: linha que começa com C ou ! (free-form)
-def t_COMMENT(t):
-    r'(^|\n)[Cc].*|!.*'
-    pass  # ignorar comentários
 
 # Newlines — rastrear número de linha
 def t_newline(t):
