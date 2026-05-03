@@ -500,11 +500,11 @@ class CodeGenerator:
             true_label = self.new_label('_TRUE')
             end_label  = self.new_label('_BOOL_END')
             self.emit(f'JZ {true_label}')
-            self.emit("PUSHS '.FALSE.'")
+            self.emit('PUSHS ".FALSE."')
             self.emit('WRITES')
             self.emit(f'JUMP {end_label}')
             self.emit_label(true_label)
-            self.emit("PUSHS '.TRUE.'")
+            self.emit('PUSHS ".TRUE."')
             self.emit('WRITES')
             self.emit_label(end_label)
         else:
@@ -597,9 +597,9 @@ class CodeGenerator:
             self.emit(f'PUSHF {node[1]}')
 
         elif kind == 'string':
-            # Escapar plicas internas
-            s = node[1].replace("'", "\\'")
-            self.emit(f"PUSHS '{s}'")
+            # Escapar aspas duplas internas
+            s = node[1].replace('"', '\\"')
+            self.emit(f'PUSHS "{s}"')
 
         elif kind == 'bool':
             self.emit(f'PUSHI {1 if node[1] else 0}')

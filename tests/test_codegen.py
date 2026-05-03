@@ -1,6 +1,5 @@
-# test_codegen.py - Testes do Gerador de Código
-# Corre todos os ficheiros .f77 da pasta tests/ pelo compilador completo
-# e gera os ficheiros .vm correspondentes
+# test_codegen.py - Validacao do Gerador de Codigo
+# Compila cada .f77 e valida comparando com o ficheiro .vm de referencia
 
 import sys
 import os
@@ -15,7 +14,7 @@ from codegen import CodeGenerator
 
 TEST_DIR = os.path.dirname(__file__)
 
-# Ficheiros de teste e descrição do que testam
+# Ficheiros de teste e descricao do que testam
 test_files = [
     ('hello.f77',        'PRINT basico'),
     ('fatorial.f77',     'DO loop + INTEGER + aritmetica'),
@@ -33,66 +32,93 @@ test_files = [
 
 
 def run_test(filename, description):
-    filepath = os.path.join(TEST_DIR, filename)
-    vmpath   = filepath.replace('.f77', '.vm')
+    """Compila um .f77 e valida contra o ficheiro .vm de referencia"""
+    f77path = os.path.join(TEST_DIR, filename)
+    vmpath_ref = f77path.replace('.f77', '.vm')
 
-    print(f"\n{'='*60}")
-    print(f"TESTE: {filename}  [{description}]")
-    print('='*60)
+    print("\n" + "="*60)
+    print("TESTE: %-20s [%s]" % (filename, description))
+    print("="*60)
 
-    if not os.path.exists(filepath):
-        print(f"  [AVISO] Ficheiro nao encontrado: {filepath}")
+    # Verificar ficheiro Fortran
+    if not os.path.exists(f77path):
+        print("  [X] Ficheiro .f77 nao encontrado")
         return None
 
-    with open(filepath, 'r') as f:
+    # Verificar ficheiro de referencia
+    if not os.path.exists(vmpath_ref):
+        print("  [W] Ficheiro .vm de referencia nao existe (sera criado)")
+        ref_code = None
+    else:
+        with open(vmpath_ref, 'r', encoding='utf-8') as f:
+            ref_code = f.read()
+
+    # Ler codigo Fortran
+    with open(f77path, 'r', encoding='utf-8') as f:
         source = f.read()
 
-    # Fase 1 — Lexer
+    # Fase 1 - Lexer
     try:
         tokens = tokenize(source)
-        print(f"  Lexer:    OK ({len(tokens)} tokens)")
+        print("  [OK] Lexer:    %d tokens" % len(tokens))
     except Exception as e:
-        print(f"  Lexer:    ERRO — {e}")
+        print("  [ER] Lexer:    %s" % str(e))
         return False
 
-    # Fase 2 — Parser
+    # Fase 2 - Parser
     try:
         ast = parse(source)
         if ast is None:
-            print("  Parser:   ERRO — AST vazia")
+            print("  [ER] Parser:   AST vazia")
             return False
-        print("  Parser:   OK")
+        print("  [OK] Parser:   OK")
     except Exception as e:
-        print(f"  Parser:   ERRO — {e}")
+        print("  [ER] Parser:   %s" % str(e))
         return False
 
-    # Fase 3 — Semântica
+    # Fase 3 - Semantica
     try:
         analyzer, ok = analyze_full(ast)
         if ok:
-            print("  Semantica: OK")
+            print("  [OK] Semantica: OK")
         else:
-            print("  Semantica: AVISOS/ERROS (ver acima)")
+            print("  [WR] Semantica: Com erros (ver acima)")
+            if analyzer is None:
+                return False
     except Exception as e:
-        print(f"  Semantica: ERRO — {e}")
-        analyzer = None
+        print("  [ER] Semantica: %s" % str(e))
+        return False
 
-    # Fase 4 — Codegen
+    # Fase 4 - Codegen
     try:
         gen = CodeGenerator(analyzer)
-        vm_code = gen.generate(ast)
-        with open(vmpath, 'w') as f:
-            f.write(vm_code)
-        lines = vm_code.strip().split('\n')
-        print(f"  Codegen:   OK ({len(lines)} linhas de VM geradas)")
-        print(f"  Saida:     {vmpath}")
-        return True
+        generated_code = gen.generate(ast)
+        lines = generated_code.strip().split('\n')
+        print("  [OK] Codegen:  %d linhas geradas" % len(lines))
     except Exception as e:
-        print(f"  Codegen:   ERRO — {e}")
+        print("  [ER] Codegen:  %s" % str(e))
+        return False
+
+    # Validacao: comparar com referencia
+    if ref_code is None:
+        print("  [NEW] Nova referencia gerada (primeira vez)")
+        with open(vmpath_ref, 'w', encoding='utf-8') as f:
+            f.write(generated_code)
+        return True
+    
+    if generated_code.strip() == ref_code.strip():
+        print("  [OK] Validacao: PASSOU (codigo VM corresponde)")
+        return True
+    else:
+        print("  [ER] Validacao: FALHOU (codigo gerado difere da referencia)")
         return False
 
 
 def main():
+    print("\n" + "="*60)
+    print("VALIDACAO DO COMPILADOR FORTRAN 77 para VM")
+    print("="*60)
+
     passed = 0
     failed = 0
     skipped = 0
@@ -106,10 +132,13 @@ def main():
         else:
             skipped += 1
 
-    print(f"\n{'='*60}")
-    print(f"RESULTADOS: {passed} OK  |  {failed} falharam  |  {skipped} em falta")
-    print('='*60)
+    print("\n" + "="*60)
+    print("RESULTADOS: %d OK | %d FALHARAM | %d AVISO" % (passed, failed, skipped))
+    print("="*60)
+
+    # Codigo de saida
+    return 0 if failed == 0 else 1
 
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())

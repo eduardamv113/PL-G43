@@ -30,6 +30,10 @@ def main():
                     help='Mostra a AST gerada pelo parser e termina')
     ap.add_argument('--no-semantic', action='store_true',
                     help='Salta a análise semântica (não recomendado)')
+    ap.add_argument('--optimize', action='store_true',
+                    help='Aplica otimizações ao código VM')
+    ap.add_argument('--report-optimizations', action='store_true',
+                    help='Mostra relatório de otimizações aplicadas')
     args = ap.parse_args()
 
     # -----------------------------------------------------------------------
@@ -116,6 +120,26 @@ def main():
         print(f"[ERRO] Falha na geração de código: {e}")
         sys.exit(1)
 
+    # -----------------------------------------------------------------------
+    # Fase 5 — Otimização (Opcional)
+    # -----------------------------------------------------------------------
+    if args.optimize:
+        print("[5/5] A otimizar código VM...")
+        
+        from optimizer import VMOptimizer
+        
+        lines = vm_code.strip().split('\n')
+        optimizer = VMOptimizer(lines)
+        optimized_lines = optimizer.optimize()
+        vm_code = '\n'.join(optimized_lines) + '\n'
+        
+        if args.report_optimizations:
+            print("      Relatório de otimizações:")
+            report = optimizer.get_optimizations_report()
+            for line in report.split('\n'):
+                if line:
+                    print(f"      {line}")
+    
     # -----------------------------------------------------------------------
     # Escrita do ficheiro de saída
     # -----------------------------------------------------------------------

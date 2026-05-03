@@ -288,15 +288,35 @@ class SemanticAnalyzer:
             dkind = decl[0]
             if dkind == 'var':
                 _, name, _ = decl
-                sym = Symbol(name, 'var', base_type)
-                if not self.current_scope.declare(sym):
-                    self.error(f"Variável '{name}' declarada mais do que uma vez em '{self.current_unit}'.")
+                
+                # Permitir redeclaração de parâmetros em funções/subrotinas
+                existing = self.current_scope.lookup_local(name)
+                if existing and existing.kind == 'var':
+                    # Redeclaração de parâmetro: atualizar tipo
+                    # (a redeclaração explícita sobrepõe o tipo implícito)
+                    existing.dtype = base_type
+                else:
+                    # Declaração nova
+                    if existing:
+                        self.error(f"Variável '{name}' declarada mais do que uma vez em '{self.current_unit}'.")
+                    else:
+                        sym = Symbol(name, 'var', base_type)
+                        self.current_scope.declare(sym)
 
             elif dkind == 'array':
                 _, name, dims = decl
-                sym = Symbol(name, 'array', base_type, dims=dims)
-                if not self.current_scope.declare(sym):
-                    self.error(f"Array '{name}' declarado mais do que uma vez em '{self.current_unit}'.")
+                
+                # Permitir redeclaração de parâmetros em funções/subrotinas
+                existing = self.current_scope.lookup_local(name)
+                if existing and existing.kind == 'array':
+                    # Redeclaração: apenas ignorar (assumir que é a mesma)
+                    pass
+                else:
+                    if existing:
+                        self.error(f"Array '{name}' declarado mais do que uma vez em '{self.current_unit}'.")
+                    else:
+                        sym = Symbol(name, 'array', base_type, dims=dims)
+                        self.current_scope.declare(sym)
 
     # -----------------------------------------------------------------------
     # Atribuição
@@ -308,7 +328,7 @@ class SemanticAnalyzer:
         rtype = self._typeof(rval)
         if ltype and rtype and not self._types_compatible(ltype, rtype):
             self.warning(
-                f"Atribuição com tipos incompatíveis: {ltype} ← {rtype} "
+                f"Atribuição com tipos incompatíveis: {ltype} <- {rtype} "
                 f"('{self._lval_name(lval)}')."
             )
 
